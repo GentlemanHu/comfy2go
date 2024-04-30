@@ -93,8 +93,10 @@ func NewComfyClient(server_address string, server_port int, callbacks *ComfyClie
 	// Handle configuration options
 	if config != nil {
 		scheme := "http://"
+		wss_scheme := "ws://"
 		if config.UseHTTPS {
 			scheme = "https://"
+			wss_scheme = "wss://"
 		}
 		sbaseaddr = scheme + server_address + ":" + strconv.Itoa(server_port)
 
@@ -121,7 +123,7 @@ func NewComfyClient(server_address string, server_port int, callbacks *ComfyClie
 			clientid:          cid,
 			queueditems:       make(map[string]*QueueItem),
 			webSocket: &WebSocketConnection{
-				WebSocketURL:   "ws://" + sbaseaddr + "/ws?clientId=" + cid,
+				WebSocketURL:   wss_scheme + sbaseaddr + "/ws?clientId=" + cid,
 				ConnectionDone: make(chan bool),
 				MaxRetry:       retry,
 				ManagerStarted: false,
