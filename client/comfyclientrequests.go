@@ -47,11 +47,6 @@ func (c *ComfyClient) GetSystemStats() (*SystemStats, error) {
 		return nil, err
 	}
 
-	// Add Authorization header if needed
-	if c.webSocket.AuthHeader != "" {
-		req.Header.Add("Authorization", "Basic " + c.webSocket.AuthHeader)
-	}
-
 	body, _ := io.ReadAll(resp.Body)
 	retv := &SystemStats{}
 	err = json.Unmarshal(body, &retv)

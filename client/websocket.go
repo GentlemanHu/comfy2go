@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 	"math"
+	"net/http"
 	"sync"
 	"time"
 
@@ -97,18 +98,16 @@ func (w *WebSocketConnection) ConnectWithManager(timeoutSeconds int) error {
 
 // Initial connection logic with exponential backoff for reconnections
 func (w *WebSocketConnection) connect() error {
-    header := http.Header{}
-    if w.AuthHeader != "" {
-        header.Add("Authorization", "Basic " + w.AuthHeader)
-    }
-    conn, _, err := websocket.DefaultDialer.Dial(w.WebSocketURL, header)
-    if err != nil {
-        slog.Error("Failed to connect: ", "error", err)
-        return err
-    }
+	header := http.Header{}
 
-    w.Conn = conn
-    return nil
+	conn, _, err := websocket.DefaultDialer.Dial(w.WebSocketURL, header)
+	if err != nil {
+		slog.Error("Failed to connect: ", "error", err)
+		return err
+	}
+
+	w.Conn = conn
+	return nil
 }
 
 func (w *WebSocketConnection) Ping() error {
