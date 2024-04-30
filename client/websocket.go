@@ -28,8 +28,9 @@ type WebSocketConnection struct {
 	Callback       WebSocketCallback
 
 	// Exponential backoff configuration
-	BaseDelay time.Duration // The initial delay, e.g., 1 second
-	MaxDelay  time.Duration // The maximum delay, e.g., 1 minute
+	BaseDelay  time.Duration // The initial delay, e.g., 1 second
+	MaxDelay   time.Duration // The maximum delay, e.g., 1 minute
+	authHeader string        // Add field for storing the Authorization header
 }
 
 // ConnectWithManager connects to the WebSocket using a connection manager
@@ -100,6 +101,9 @@ func (w *WebSocketConnection) ConnectWithManager(timeoutSeconds int) error {
 func (w *WebSocketConnection) connect() error {
 	header := http.Header{}
 
+	if w.authHeader != "" { // Access authHeader from ComfyClient
+		header.Add("Authorization", w.authHeader)
+	}
 	conn, _, err := websocket.DefaultDialer.Dial(w.WebSocketURL, header)
 	if err != nil {
 		slog.Error("Failed to connect: ", "error", err)

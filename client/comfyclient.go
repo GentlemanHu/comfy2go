@@ -127,6 +127,7 @@ func NewComfyClient(server_address string, server_port int, callbacks *ComfyClie
 				ManagerStarted: false,
 				BaseDelay:      1 * time.Second,
 				MaxDelay:       10 * time.Second,
+				authHeader:     auth,
 			},
 			initialized: false,
 			queuecount:  0,
