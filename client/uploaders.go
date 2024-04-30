@@ -12,7 +12,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/richinsley/comfy2go/graphapi"
+	"github.com/GentlemanHu/comfy2go/graphapi"
 )
 
 type ImageType string

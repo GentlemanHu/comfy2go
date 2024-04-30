@@ -1,6 +1,6 @@
 package client
 
-import "github.com/richinsley/comfy2go/graphapi"
+import "github.com/GentlemanHu/comfy2go/graphapi"
 
 type QueueItem struct {
 	PromptID   string                 `json:"prompt_id"`

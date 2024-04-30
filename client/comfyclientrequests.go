@@ -12,7 +12,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/richinsley/comfy2go/graphapi"
+	"github.com/GentlemanHu/comfy2go/graphapi"
 )
 
 /*

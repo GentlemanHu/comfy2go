@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/richinsley/comfy2go/graphapi"
+	"github.com/GentlemanHu/comfy2go/graphapi"
 )
 
 type QueuedItemStoppedReason string
