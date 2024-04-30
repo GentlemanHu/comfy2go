@@ -90,59 +90,30 @@ func NewComfyClient(server_address string, server_port int, callbacks *ComfyClie
 	sbaseaddr := server_address + ":" + strconv.Itoa(server_port)
 	cid := uuid.New().String()
 
-	// Handle configuration options
-	if config != nil {
-		scheme := "http://"
-		wss_scheme := "ws://"
-		if config.UseHTTPS {
-			scheme = "https://"
-			wss_scheme = "wss://"
-		}
-		sbaseaddr = scheme + server_address + ":" + strconv.Itoa(server_port)
+	scheme := "http://"
+	wss_scheme := "ws://"
+	if config.UseHTTPS {
+		scheme = "https://"
+		wss_scheme = "wss://"
+	}
+	sbaseaddr = scheme + server_address + ":" + strconv.Itoa(server_port)
 
-		// Set timeout and retry from config
-		timeout := -1
-		if config.Timeout > 0 {
-			timeout = config.Timeout
-		}
-		retry := 5
-		if config.Retry > 0 {
-			retry = config.Retry
-		}
-
-		// Handle basic authentication (update logic as needed)
-		auth := ""
-		if config.Username != "" && config.Password != "" {
-			auth = "Basic " + base64.StdEncoding.EncodeToString([]byte(config.Username+":"+config.Password))
-		}
-
-		retv := &ComfyClient{
-			serverBaseAddress: sbaseaddr,
-			serverAddress:     server_address,
-			serverPort:        server_port,
-			clientid:          cid,
-			queueditems:       make(map[string]*QueueItem),
-			webSocket: &WebSocketConnection{
-				WebSocketURL:   wss_scheme + sbaseaddr + "/ws?clientId=" + cid,
-				ConnectionDone: make(chan bool),
-				MaxRetry:       retry,
-				ManagerStarted: false,
-				BaseDelay:      1 * time.Second,
-				MaxDelay:       10 * time.Second,
-				authHeader:     auth,
-			},
-			initialized: false,
-			queuecount:  0,
-			callbacks:   callbacks,
-			timeout:     timeout,
-			authHeader:  auth,
-		}
-
-		// ... (rest of the existing code) ...
-		return retv
+	// Set timeout and retry from config
+	timeout := -1
+	if config.Timeout > 0 {
+		timeout = config.Timeout
+	}
+	retry := 5
+	if config.Retry > 0 {
+		retry = config.Retry
 	}
 
-	// Default configuration (backward compatible)
+	// Handle basic authentication (update logic as needed)
+	auth := ""
+	if config.Username != "" && config.Password != "" {
+		auth = "Basic " + base64.StdEncoding.EncodeToString([]byte(config.Username+":"+config.Password))
+	}
+
 	retv := &ComfyClient{
 		serverBaseAddress: sbaseaddr,
 		serverAddress:     server_address,
@@ -150,21 +121,25 @@ func NewComfyClient(server_address string, server_port int, callbacks *ComfyClie
 		clientid:          cid,
 		queueditems:       make(map[string]*QueueItem),
 		webSocket: &WebSocketConnection{
-			WebSocketURL:   "ws://" + sbaseaddr + "/ws?clientId=" + cid,
+			WebSocketURL:   wss_scheme + sbaseaddr + "/ws?clientId=" + cid,
 			ConnectionDone: make(chan bool),
-			MaxRetry:       5, // Maximum number of retries
+			MaxRetry:       retry,
 			ManagerStarted: false,
 			BaseDelay:      1 * time.Second,
 			MaxDelay:       10 * time.Second,
+			authHeader:     auth,
 		},
 		initialized: false,
 		queuecount:  0,
 		callbacks:   callbacks,
-		timeout:     -1,
+		timeout:     timeout,
+		authHeader:  auth,
 	}
-	// golang uses mark-sweep GC, so this circular reference should be fine
+
+	// ... (rest of the existing code) ...
 	retv.webSocket.Callback = retv
 	return retv
+
 }
 
 func (cc *ComfyClient) OnMessage(message string) {
