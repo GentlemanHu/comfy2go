@@ -30,12 +30,12 @@ The ClientAPI interoperates with the ComfyUI backend, offering:
 ## Installation
 First, use 'go get' to install the latest version of the library.
 ```bash
-go get -u github.com/richinsley/comfy2go@latest
+go get -u github.com/GentlemanHu/comfy2go@latest
 ```
 Next, include Comfy2go client (and optionally the graph) APIs in your application:
 ```go
-import "github.com/richinsley/comfy2go/client"
-import "github.com/richinsley/comfy2go/graphapi"
+import "github.com/GentlemanHu/comfy2go/client"
+import "github.com/GentlemanHu/comfy2go/graphapi"
 ```
 ## Usage
 An **IMPORTANT** note is that Comfy2go works with full ComfyUI workflows, not workflows saved with "Save (API Format)"
@@ -48,7 +48,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/richinsley/comfy2go/client"
+	"github.com/GentlemanHu/comfy2go/client"
 )
 
 func main() {
