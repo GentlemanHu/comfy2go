@@ -57,34 +57,6 @@ type ComfyClient struct {
 	authHeader            string // Add field for storing the Authorization header
 }
 
-// NewComfyClientWithTimeout creates a new instance of a Comfy2go client with a connection timeout
-func NewComfyClientWithTimeout(server_address string, server_port int, callbacks *ComfyClientCallbacks, timeout int, retry int) *ComfyClient {
-	sbaseaddr := server_address + ":" + strconv.Itoa(server_port)
-	cid := uuid.New().String()
-	retv := &ComfyClient{
-		serverBaseAddress: sbaseaddr,
-		serverAddress:     server_address,
-		serverPort:        server_port,
-		clientid:          cid,
-		queueditems:       make(map[string]*QueueItem),
-		webSocket: &WebSocketConnection{
-			WebSocketURL:   "ws://" + sbaseaddr + "/ws?clientId=" + cid,
-			ConnectionDone: make(chan bool),
-			MaxRetry:       retry, // Maximum number of retries
-			ManagerStarted: false,
-			BaseDelay:      1 * time.Second,
-			MaxDelay:       10 * time.Second,
-		},
-		initialized: false,
-		queuecount:  0,
-		callbacks:   callbacks,
-		timeout:     timeout,
-	}
-	// golang uses mark-sweep GC, so this circular reference should be fine
-	retv.webSocket.Callback = retv
-	return retv
-}
-
 // NewComfyClient creates a new instance of a Comfy2go client
 func NewComfyClient(server_address string, server_port int, callbacks *ComfyClientCallbacks, config *ComfyClientConfig) *ComfyClient {
 	sbaseaddr := server_address + ":" + strconv.Itoa(server_port)
@@ -121,7 +93,7 @@ func NewComfyClient(server_address string, server_port int, callbacks *ComfyClie
 		clientid:          cid,
 		queueditems:       make(map[string]*QueueItem),
 		webSocket: &WebSocketConnection{
-			WebSocketURL:   wss_scheme + sbaseaddr + "/ws?clientId=" + cid,
+			WebSocketURL:   wss_scheme + server_address + ":" + strconv.Itoa(server_port) + "/ws?clientId=" + cid,
 			ConnectionDone: make(chan bool),
 			MaxRetry:       retry,
 			ManagerStarted: false,
