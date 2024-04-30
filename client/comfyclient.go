@@ -113,7 +113,7 @@ func NewComfyClient(server_address string, server_port int, callbacks *ComfyClie
 		// Handle basic authentication (update logic as needed)
 		auth := ""
 		if config.Username != "" && config.Password != "" {
-			auth = base64.StdEncoding.EncodeToString([]byte(config.Username + ":" + config.Password))
+			auth = "Basic " + base64.StdEncoding.EncodeToString([]byte(config.Username+":"+config.Password))
 		}
 
 		retv := &ComfyClient{

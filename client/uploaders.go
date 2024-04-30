@@ -53,17 +53,12 @@ func (c *ComfyClient) UploadFileFromReader(r io.Reader, filename string, overwri
 
 	// Close the writer to finalize the body content
 	writer.Close()
+	// Create a header with Content-Type
+	header := http.Header{}
+	header.Set("Content-Type", writer.FormDataContentType())
 
-	// Create the request
-	req, err := http.NewRequest("POST", fmt.Sprintf("http://%s/upload/image", c.serverBaseAddress), &requestBody)
-	if err != nil {
-		return "", err
-	}
-	req.Header.Set("Content-Type", writer.FormDataContentType())
-
-	// Execute the request
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	// Make the POST request using makeRequest
+	resp, err := c.makeRequest("POST", "upload/image", header, &requestBody)
 	if err != nil {
 		return "", err
 	}
