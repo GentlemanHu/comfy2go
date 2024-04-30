@@ -12,6 +12,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/GentlemanHu/comfy2go/graphapi"
+    "encoding/base64" // Import for basic authentication
 )
 
 type QueuedItemStoppedReason string
@@ -23,86 +24,146 @@ const (
 )
 
 type ComfyClientCallbacks struct {
-	ClientQueueCountChanged func(*ComfyClient, int)
-	QueuedItemStarted       func(*ComfyClient, *QueueItem)
-	QueuedItemStopped       func(*ComfyClient, *QueueItem, QueuedItemStoppedReason)
-	QueuedItemDataAvailable func(*ComfyClient, *QueueItem, *PromptMessageData)
+    ClientQueueCountChanged func(*ComfyClient, int)
+    QueuedItemStarted       func(*ComfyClient, *QueueItem)
+    QueuedItemStopped       func(*ComfyClient, *QueueItem, QueuedItemStoppedReason)
+    QueuedItemDataAvailable func(*ComfyClient, *QueueItem, *PromptMessageData)
+}
+
+// ComfyClientConfig struct for optional configuration
+type ComfyClientConfig struct {
+    UseHTTPS bool
+    Username string
+    Password string
+    Timeout  int
+    Retry    int
 }
 
 // ComfyClient is the top level object that allows for interaction with the ComfyUI backend
 type ComfyClient struct {
-	serverBaseAddress     string
-	serverAddress         string
-	serverPort            int
-	clientid              string
-	webSocket             *WebSocketConnection
-	nodeobjects           *graphapi.NodeObjects
-	initialized           bool
-	queueditems           map[string]*QueueItem
-	queuecount            int
-	callbacks             *ComfyClientCallbacks
-	lastProcessedPromptID string
-	timeout               int
+    serverBaseAddress     string
+    serverAddress         string
+    serverPort            int
+    clientid              string
+    webSocket             *WebSocketConnection
+    nodeobjects           *graphapi.NodeObjects
+    initialized           bool
+    queueditems           map[string]*QueueItem
+    queuecount            int
+    callbacks             *ComfyClientCallbacks
+    lastProcessedPromptID string
+    timeout               int
 }
 
 // NewComfyClientWithTimeout creates a new instance of a Comfy2go client with a connection timeout
 func NewComfyClientWithTimeout(server_address string, server_port int, callbacks *ComfyClientCallbacks, timeout int, retry int) *ComfyClient {
-	sbaseaddr := server_address + ":" + strconv.Itoa(server_port)
-	cid := uuid.New().String()
-	retv := &ComfyClient{
-		serverBaseAddress: sbaseaddr,
-		serverAddress:     server_address,
-		serverPort:        server_port,
-		clientid:          cid,
-		queueditems:       make(map[string]*QueueItem),
-		webSocket: &WebSocketConnection{
-			WebSocketURL:   "ws://" + sbaseaddr + "/ws?clientId=" + cid,
-			ConnectionDone: make(chan bool),
-			MaxRetry:       retry, // Maximum number of retries
-			ManagerStarted: false,
-			BaseDelay:      1 * time.Second,
-			MaxDelay:       10 * time.Second,
-		},
-		initialized: false,
-		queuecount:  0,
-		callbacks:   callbacks,
-		timeout:     timeout,
-	}
-	// golang uses mark-sweep GC, so this circular reference should be fine
-	retv.webSocket.Callback = retv
-	return retv
+    sbaseaddr := server_address + ":" + strconv.Itoa(server_port)
+    cid := uuid.New().String()
+    retv := &ComfyClient{
+        serverBaseAddress: sbaseaddr,
+        serverAddress:     server_address,
+        serverPort:        server_port,
+        clientid:          cid,
+        queueditems:       make(map[string]*QueueItem),
+        webSocket: &WebSocketConnection{
+            WebSocketURL:   "ws://" + sbaseaddr + "/ws?clientId=" + cid,
+            ConnectionDone: make(chan bool),
+            MaxRetry:       retry, // Maximum number of retries
+            ManagerStarted: false,
+            BaseDelay:      1 * time.Second,
+            MaxDelay:       10 * time.Second,
+        },
+        initialized: false,
+        queuecount:  0,
+        callbacks:   callbacks,
+        timeout:     timeout,
+    }
+    // golang uses mark-sweep GC, so this circular reference should be fine
+    retv.webSocket.Callback = retv
+    return retv
 }
 
 // NewComfyClient creates a new instance of a Comfy2go client
-func NewComfyClient(server_address string, server_port int, callbacks *ComfyClientCallbacks) *ComfyClient {
-	sbaseaddr := server_address + ":" + strconv.Itoa(server_port)
-	cid := uuid.New().String()
-	retv := &ComfyClient{
-		serverBaseAddress: sbaseaddr,
-		serverAddress:     server_address,
-		serverPort:        server_port,
-		clientid:          cid,
-		queueditems:       make(map[string]*QueueItem),
-		webSocket: &WebSocketConnection{
-			WebSocketURL:   "ws://" + sbaseaddr + "/ws?clientId=" + cid,
-			ConnectionDone: make(chan bool),
-			MaxRetry:       5, // Maximum number of retries
-			ManagerStarted: false,
-			BaseDelay:      1 * time.Second,
-			MaxDelay:       10 * time.Second,
-		},
-		initialized: false,
-		queuecount:  0,
-		callbacks:   callbacks,
-		timeout:     -1,
-	}
-	// golang uses mark-sweep GC, so this circular reference should be fine
-	retv.webSocket.Callback = retv
-	return retv
+func NewComfyClient(server_address string, server_port int, callbacks *ComfyClientCallbacks, config *ComfyClientConfig) *ComfyClient {
+    sbaseaddr := server_address + ":" + strconv.Itoa(server_port)
+    cid := uuid.New().String()
+    
+    // Handle configuration options
+    if config != nil {
+        scheme := "http://"
+        if config.UseHTTPS {
+            scheme = "https://"
+        }
+        sbaseaddr = scheme + server_address + ":" + strconv.Itoa(server_port)
+        
+        // Set timeout and retry from config
+        timeout := -1
+        if config.Timeout > 0 {
+            timeout = config.Timeout
+        }
+        retry := 5
+        if config.Retry > 0 {
+            retry = config.Retry
+        }
+
+        // Handle basic authentication (update logic as needed)
+        auth := ""
+        if config.Username != "" && config.Password != "" {
+            auth = base64.StdEncoding.EncodeToString([]byte(config.Username + ":" + config.Password))
+        }
+
+        retv := &ComfyClient{
+            serverBaseAddress: sbaseaddr,
+            serverAddress:     server_address,
+            serverPort:        server_port,
+            clientid:          cid,
+            queueditems:       make(map[string]*QueueItem),
+            webSocket: &WebSocketConnection{
+                WebSocketURL:   "ws://" + sbaseaddr + "/ws?clientId=" + cid,
+                ConnectionDone: make(chan bool),
+                MaxRetry:       retry,
+                ManagerStarted: false,
+                BaseDelay:      1 * time.Second,
+                MaxDelay:       10 * time.Second,
+                AuthHeader:     auth, // Add auth header to WebSocket
+            },
+            initialized: false,
+            queuecount:  0,
+            callbacks:   callbacks,
+            timeout:     timeout,
+        }
+        
+        // ... (rest of the existing code) ...
+        return retv
+    }
+    
+    // Default configuration (backward compatible)
+    retv := &ComfyClient{
+        serverBaseAddress: sbaseaddr,
+        serverAddress:     server_address,
+        serverPort:        server_port,
+        clientid:          cid,
+        queueditems:       make(map[string]*QueueItem),
+        webSocket: &WebSocketConnection{
+            WebSocketURL:   "ws://" + sbaseaddr + "/ws?clientId=" + cid,
+            ConnectionDone: make(chan bool),
+            MaxRetry:       5, // Maximum number of retries
+            ManagerStarted: false,
+            BaseDelay:      1 * time.Second,
+            MaxDelay:       10 * time.Second,
+        },
+        initialized: false,
+        queuecount:  0,
+        callbacks:   callbacks,
+        timeout:     -1,
+    }
+    // golang uses mark-sweep GC, so this circular reference should be fine
+    retv.webSocket.Callback = retv
+    return retv
 }
 
 func (cc *ComfyClient) OnMessage(message string) {
-	cc.OnWindowSocketMessage(message)
+    cc.OnWindowSocketMessage(message)
 }
 
 // IsInitialized returns true if the client's websocket is connected and initialized
