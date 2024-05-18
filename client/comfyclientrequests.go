@@ -288,8 +288,10 @@ func (c *ComfyClient) GetObjectInfos() (*graphapi.NodeObjects, error) {
 	}
 
 	body, _ := io.ReadAll(resp.Body)
+	slog.Error("getobject_info", "body", string(body))
 	result := &graphapi.NodeObjects{}
 	err = json.Unmarshal(body, &result.Objects)
+	slog.Error("getobject_info", "body result objects", string(&result.Objects))
 	if err != nil {
 		return nil, err
 	}
